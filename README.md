@@ -1,7 +1,7 @@
 # Any detector
 
 いろいろなものを検出します。
-<img src="https://raw.githubusercontent.com/samacoba/count/master/sample.png">
+<img src="https://raw.githubusercontent.com/samacoba/detector/master/sample.png">
 
 
 ## Requirement
