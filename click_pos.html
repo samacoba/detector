@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head><mata charset="utf-8"/><title>click position</title></head>
+<body>
+<canvas id="c" width="400" height="400" style="border:1px solid;"></canvas>
+<form name="js">
+Ctrl+Click:
+<input type="text" name="txtbA" value="" style="width:50px;"><br>
+<textarea name="tlistA"></textarea><br>
+</form>
+<script src="jquery.min.js"></script>
+<script src="fabric.min.js"></script>
+<script>
+
+var canvas = new fabric.Canvas('c');
+var panning = false;
+canvas.selection = false//ドラック複数選択不可
+
+var cir_colorA = 'rgba(250, 250, 0, 0.5)'
+var img_name = 'imgA.png'
+
+//位置と数をテキストに出力
+var push_posi = function(){
+    
+    posi_txtA=''    
+    countA=0    
+    canvas.forEachObject(function(o){
+        if(o.stroke == cir_colorA){
+            posi_txtA += String(Math.round(o.top))
+            +',' +String(Math.round(o.left))+'\n';
+            countA++
+        }
+    });
+    document.js.tlistA.value =posi_txtA;
+    document.js.txtbA.value= String(countA);
+}
+
+//画像を読み込む
+fabric.Image.fromURL(img_name, function(img) {
+    image = img.set({})
+    image.selectable=false;
+    image.evented=false;
+    canvas.add(image);
+ });
+
+//クリック時（マウスダウン時）
+canvas.on('mouse:down', function (e) {
+    panning = true;
+    //円追加
+    if (e.e.ctrlKey || e.e.shiftKey){
+        if(e.e.ctrlKey){cir_color = cir_colorA;}
+        if(e.e.shiftKey){cir_color = cir_colorB;}
+        mouse_pos = canvas.getPointer(e.e);
+        var circle = new fabric.Circle({
+            left: mouse_pos.x,
+            top: mouse_pos.y,
+            originX: 'center',
+            originY: 'center',
+            radius: 4,
+            fill: '',
+            strokeWidth: 1
+            });
+        circle.stroke=cir_color;
+        circle.hasControls = false;
+        canvas.add(circle);
+        panning = false
+    }
+});
+
+
+//マウスアップ時
+canvas.on('mouse:up', function (e) {
+    panning = false;
+    push_posi();
+});
+
+//画面スクロール
+canvas.on('mouse:move', function(e) {
+   if (canvas.getActiveObject() == null && panning) {
+        var delta = new fabric.Point(e.e.movementX, e.e.movementY);
+        canvas.relativePan(delta);
+    }
+});
+
+//画面ホイール拡大縮小
+var Zoom_mag=1;
+$(canvas.wrapperEl).on('mousewheel', function(e) {
+    var delta = e.originalEvent.wheelDelta / 720;    
+    Zoom_mag *= 1 + delta;
+    x = e.offsetX, y = e.offsetY;
+    canvas.zoomToPoint({ x: x, y: y }, Zoom_mag);    
+    canvas.renderAll();
+    return false;    
+});
+
+//削除
+$(window).keydown(function(e) {    
+    switch (e.keyCode) {
+        case 46: // delete
+        if(canvas.getActiveGroup()){
+            canvas.getActiveGroup().forEachObject(function(o){ canvas.remove(o) });
+            canvas.discardActiveGroup().renderAll();
+        }
+        else {canvas.remove(canvas.getActiveObject());}
+        push_posi();
+        return false;
+    }
+    return;
+});
+//ウィジェットで値を取得
+require.undef('hello');
+define('hello', ["jupyter-js-widgets"], function(widgets) {
+    var HelloView = widgets.DOMWidgetView.extend({
+        render: function() {
+            this.model.on('change:value', this.value_changed, this);
+        },
+        value_changed: function() {
+            this.model.set('html_form', document.js.tlistA.value);//ここでフォーム内のテキストを取得
+            this.touch();
+        },
+    });
+    return {
+        HelloView : HelloView
+    };
+});
+
+</script>
+</body>
+</html>
